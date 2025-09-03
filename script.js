@@ -1,21 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     const initialState = {
-        recrutement: [
-            { id: 1, id_embauche: 'E123', matricule: 'M12345', nom_prenom: 'Jean Dupont', cin: 'AB123456', fonction_reel: 'Developpeur', fonction_agirh: 'DEV', date_debut: '2023-05-15', site: 'Paris', remuneration: 45000, telephone: '0601020304', type_contrat: 'CDI', envoi_donnes: 'OUI', date_envoi_donnes: '2023-05-10', cnss: 'OUI', bulletin_adhesion: 'OUI', obs: 'RAS' }
-        ],
-        mutation: [
-             { id: 1, matricule: 'M54321', nom_prenom: 'Paul Martin', site_actuel: 'Lyon', site_futur: 'Paris', fonction: 'Superviseur', fonction_agirh: 'SUP', date_mutation: '2024-02-01', obs: 'Promotion interne' }
-        ],
-        doc_adm: [
-            { id: 1, matricule: 'M12345', nom_prenom: 'Jean Dupont', site: 'Paris', type_contrat: 'CDI', fonction: 'Developpeur', droit_paie: 'Oui', doc_demandes: 'Contrat de travail', observations: 'Signe', date: '2023-05-15' }
-        ],
-        depart: [
-            { id: 1, region: 'IDF', matricule: 'M98765', nom_prenom: 'Sophie Dubois', fonction: 'Analyste RH', fonction_agirh: 'RH', date_integration: '2021-01-10', site: 'Paris', date_depart: '2024-03-31', nature_depart: 'Demission', motif_depart: 'Autre opportunite', type_contrat: 'CDI', observation: '', justif_depose: 'Oui', preavis: 'Effectue' }
-        ],
-        stc: [
-            { id: 1, site: 'Paris', matricule: 'M98765', nom_prenom: 'Sophie Dubois', fonction: 'Analyste RH', date_depart: '2024-03-31', stc_magasin: 'OUI', stc_wafaa: 'OUI', date_envoi: '2024-04-05' }
-        ]
+        recrutement: [],
+        mutation: [],
+        doc_adm: [],
+        depart: [],
+        stc: [],
+        employeeList: []
     };
 
     // --- State Management with localStorage ---
@@ -28,7 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (serializedState === null) {
                 return initialState;
             }
-            return JSON.parse(serializedState);
+            const loadedState = JSON.parse(serializedState);
+            loadedState.employeeList = loadedState.employeeList || [];
+            return loadedState;
         } catch (e) {
             console.error("Could not load state from localStorage", e);
             return initialState;
@@ -139,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let filteredData = [...(state[section] || [])];
         const searchTerm = filters[section]?.search?.toLowerCase() || '';
 
-        // General Search
         if (searchTerm) {
             filteredData = filteredData.filter(item => 
                 Object.values(item).some(val => 
@@ -148,11 +140,10 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         }
         
-        // Specific Filters
         if (filters[section]?.specific) {
             for (const key in filters[section].specific) {
                 const value = filters[section].specific[key];
-                if (value) { // Only filter if a value is selected
+                if (value) {
                     filteredData = filteredData.filter(item => item[key] === value);
                 }
             }
@@ -166,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!select) return;
 
         const options = [...new Set(state[section].map(item => item[key]))];
-        select.innerHTML = '<option value="">Tous</option>'; // Reset
+        select.innerHTML = '<option value="">Tous</option>';
         options.forEach(option => {
             if(option) {
                 const opt = document.createElement('option');
@@ -184,9 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-
     // --- Generic CRUD and Rendering Logic ---
-
     function renderTable(section, dataToRender) {
         const tableBody = document.querySelector(`#table-${section} tbody`);
         if (!tableBody) return;
@@ -196,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (data.length === 0) return;
         
-        const keys = Object.keys(data[0]).filter(k => k !== 'id');
+        const keys = Object.keys(data[0]).filter(k => k !== 'id' && k !== 'createdAt');
         
         data.forEach(item => {
             const row = document.createElement('tr');
@@ -234,13 +223,17 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         const form = event.target;
         const formData = new FormData(form);
-        const newItem = { id: Date.now() };
+        const newItem = { 
+            id: Date.now(),
+            createdAt: new Date().toISOString() // Add creation timestamp
+        };
         for (let [key, value] of formData.entries()) {
             newItem[key] = value;
         }
+        if (!state[section]) state[section] = [];
         state[section].push(newItem);
         saveState();
-        applyFilters(section); // Re-render with filters
+        applyFilters(section);
         renderDashboard(); 
         form.reset();
     }
@@ -254,6 +247,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // --- Enhanced Autocomplete Logic ---
+    function setupAutocomplete(form) {
+        const matriculeInput = form.querySelector('input[name="matricule"]');
+        if (!matriculeInput) return;
+
+        // Use 'change' event to trigger after the user leaves the field
+        matriculeInput.addEventListener('change', () => {
+            const matriculeValue = matriculeInput.value.trim();
+            
+            // Find the employee in the master list
+            const employee = state.employeeList.find(emp => emp.matricule === matriculeValue);
+
+            // First, clear all form fields except for the matricule itself
+            Array.from(form.elements).forEach(el => {
+                if (el.name !== 'matricule') {
+                    el.value = '';
+                }
+            });
+
+            if (employee) {
+                // If an employee is found, populate the form with their data
+                for (const key in employee) {
+                    const input = form.querySelector(`input[name="${key}"], select[name="${key}"]`);
+                    // Check if the form has a field for this piece of data
+                    if (input && key !== 'matricule') {
+                        input.value = employee[key];
+                    }
+                }
+            }
+            // If no employee is found, the fields are already cleared and ready for manual entry.
+        });
+    }
+
     // --- Initial setup and event listeners ---
     const sections = ['recrutement', 'mutation', 'doc_adm', 'depart', 'stc'];
     sections.forEach(section => {
@@ -261,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById(`form-${section}`);
         if(form) {
             form.addEventListener('submit', (e) => handleFormSubmit(e, section));
+            setupAutocomplete(form);
         }
         
         const importInput = document.getElementById(`import-${section}`);
@@ -268,7 +295,6 @@ document.addEventListener('DOMContentLoaded', function() {
              importInput.addEventListener('change', (e) => handleFileUpload(e, section));
         }
 
-        // Search listener
         const searchInput = document.getElementById(`search-${section}`);
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -277,7 +303,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Filter listeners
         const filterDropdown = document.getElementById(`filter-${section}`);
         if (filterDropdown) {
              const selects = filterDropdown.querySelectorAll('select');
@@ -292,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
              });
         }
 
-        applyFilters(section); // Initial render
+        applyFilters(section);
     });
 
     // --- Modal Logic ---
@@ -309,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalForm = document.getElementById(`form-${section}`);
 
         modalTitle.textContent = `Modifier - ${originalForm.previousElementSibling.textContent.replace('Ajouter un nouveau', '').trim()}`;
-        editForm.innerHTML = ''; // Clear previous form fields
+        editForm.innerHTML = '';
 
         Array.from(originalForm.elements).forEach(el => {
             if (el.name) {
@@ -340,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
         state[section][itemIndex] = { ...state[section][itemIndex], ...updatedValues };
         saveState();
         applyFilters(section);
-        renderDashboard(); // Update dashboard on edit
+        renderDashboard();
         closeEditModal();
     }
 
@@ -352,95 +377,184 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial Dashboard Render
-    renderDashboard();
-
-});
-
-// --- CSV Import/Export Logic ---
-
-window.importFromCsv = function(section) {
-    document.getElementById(`import-${section}`).click();
-}
-
-function handleFileUpload(event, section) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const text = e.target.result;
-        const data = parseCSV(text, section);
-        if (data.length > 0) {
-            state[section] = [...state[section], ...data];
-            saveState();
-            applyFilters(section);
-            renderDashboard();
-            alert(`${data.length} enregistrements importes avec succes!`);
-        } else {
-            alert("Impossible d'importer le fichier. Verifiez le format et les en-tetes.");
+    // --- Deadline Alert ---
+    function checkDeadlineAlert() {
+        const today = new Date();
+        if (today.getDate() === 15) {
+            document.getElementById('deadline-alert').classList.remove('hidden');
         }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; // Reset file input
-}
+    }
 
-function parseCSV(text, section) {
-    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
-    if (lines.length < 2) return [];
+    // --- Master Employee List Import ---
+    const importEmployeeListBtn = document.getElementById('import-employee-list-btn');
+    const importEmployeeListInput = document.getElementById('import-employee-list-input');
+    
+    importEmployeeListBtn.addEventListener('click', () => importEmployeeListInput.click());
+    importEmployeeListInput.addEventListener('change', handleEmployeeListUpload);
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const form = document.getElementById(`form-${section}`);
-    const expectedKeys = Array.from(form.elements).map(el => el.name).filter(Boolean);
-    const expectedKeySet = new Set(expectedKeys);
+    function handleEmployeeListUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-    const data = [];
-    for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        const newEntry = { id: Date.now() + i };
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split(/\r\n|\n/).filter(line => line);
+            if (lines.length < 2) {
+                alert("Fichier CSV invalide ou vide.");
+                return;
+            }
 
-        headers.forEach((header, index) => {
-            // Only import data for columns that match a form field name
-            if (expectedKeySet.has(header) && values[index] !== undefined) {
-                newEntry[header] = values[index];
+            // Normalize headers: lowercase, trim, handle common variations
+            const headers = lines[0].split(',').map(h => 
+                h.trim().toLowerCase().replace(/"/g, '').replace(/ /g, '_').replace('é', 'e').replace('è', 'e')
+            );
+
+            const employeeList = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                let employee = {};
+                let hasMatricule = false;
+                headers.forEach((header, index) => {
+                    // Map CSV header to form field name
+                    let key = header.replace('nom_et_prenom', 'nom_prenom').replace('numero_de_telephone', 'telephone');
+                    if (key === 'matricule' && values[index]) {
+                        hasMatricule = true;
+                    }
+                    employee[key] = values[index];
+                });
+                if(hasMatricule) {
+                    employeeList.push(employee);
+                }
+            }
+            
+            state.employeeList = employeeList;
+            saveState();
+            alert(`${employeeList.length} employes importes avec succes depuis le fichier principal.`);
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    // --- Daily Report Generation ---
+    const generateDailyReportBtn = document.getElementById('generate-daily-report-btn');
+    generateDailyReportBtn.addEventListener('click', generateDailyReport);
+
+    function generateDailyReport() {
+        const today = new Date().toISOString().slice(0, 10); // Get YYYY-MM-DD
+        let dailyEntries = [];
+
+        sections.forEach(section => {
+            if (state[section] && state[section].length > 0) {
+                const todaySectionEntries = state[section].filter(item => item.createdAt && item.createdAt.slice(0, 10) === today);
+                todaySectionEntries.forEach(entry => {
+                    dailyEntries.push({ Section: section, ...entry });
+                });
             }
         });
 
-        // Only add the new entry if it contains more than just the 'id' field
-        if (Object.keys(newEntry).length > 1) {
+        if (dailyEntries.length === 0) {
+            alert("Aucune nouvelle entree enregistree aujourd'hui.");
+            return;
+        }
+
+        exportToCsv(`Rapport_Journalier_${today}.csv`, null, dailyEntries);
+        alert(`Rapport journalier genere avec ${dailyEntries.length} entrees.`);
+    }
+
+    // Initial Dashboard Render and Checks
+    renderDashboard();
+    checkDeadlineAlert();
+
+    // --- CSV Import/Export Logic ---
+
+    window.importFromCsv = function(section) {
+        document.getElementById(`import-${section}`).click();
+    }
+
+    function handleFileUpload(event, section) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const data = parseCSV(text, section);
+            if (data.length > 0) {
+                if (!state[section]) state[section] = [];
+                state[section] = [...state[section], ...data];
+                saveState();
+                applyFilters(section);
+                renderDashboard();
+                alert(`${data.length} enregistrements importes avec succes!`);
+            } else {
+                alert("Impossible d'importer le fichier. Verifiez le format et les en-tetes.");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    function parseCSV(text, section) {
+        const lines = text.split(/\r\n|\n/).filter(line => line);
+        if (lines.length < 2) return [];
+
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const form = document.getElementById(`form-${section}`);
+        const expectedKeys = Array.from(form.elements).map(el => el.name).filter(Boolean);
+
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+            const newEntry = { 
+                id: Date.now() + i,
+                createdAt: new Date().toISOString()
+            };
+            
+            for (let j = 0; j < expectedKeys.length; j++) {
+                if (values[j] !== undefined) {
+                     newEntry[expectedKeys[j]] = values[j];
+                }
+            }
             data.push(newEntry);
         }
+        return data;
     }
-    return data;
-}
 
+    window.exportToCsv = function(filename, section, customData = null) {
+        const data = customData || state[section];
+        if (!data || data.length === 0) {
+            if (!customData) alert("Aucune donnee a exporter.");
+            return;
+        }
+        
+        // Create a set of all possible keys from the data
+        const allKeys = new Set();
+        data.forEach(item => {
+            Object.keys(item).forEach(key => allKeys.add(key));
+        });
 
-window.exportToCsv = function(filename, section) {
-    const data = state[section];
-    if (!data || data.length === 0) {
-        alert("Aucune donnee a exporter.");
-        return;
+        // Define a consistent order, removing internal keys
+        const orderedKeys = Array.from(allKeys).filter(k => k !== 'id' && k !== 'createdAt');
+
+        const headerRow = orderedKeys.join(',');
+        const rows = data.map(item => {
+            return orderedKeys.map(key => {
+                let cell = item[key] === null || item[key] === undefined ? '' : item[key];
+                cell = String(cell);
+                if (cell.includes(',') || cell.includes('\n') || cell.includes('"')) {
+                    cell = `"${cell.replace(/"/g, '""')}"`;
+                }
+                return cell;
+            }).join(',');
+        });
+
+        const csvContent = [headerRow, ...rows].join('\n');
+        const link = document.createElement("a");
+        link.setAttribute("href", `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
-    
-    const keys = Object.keys(data[0]).filter(k => k !== 'id');
-    const headerRow = keys.join(',');
-    const rows = data.map(item => {
-        return keys.map(key => {
-            let cell = item[key] === null || item[key] === undefined ? '' : item[key];
-            cell = String(cell);
-            // Escape quotes and wrap in quotes if it contains comma, newline or quote
-            if (cell.includes(',') || cell.includes('\n') || cell.includes('"')) {
-                cell = `"${cell.replace(/"/g, '""')}"`;
-            }
-            return cell;
-        }).join(',');
-    });
-
-    const csvContent = [headerRow, ...rows].join('\n');
-    const link = document.createElement("a");
-    link.setAttribute("href", `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+});

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Tableau de Bord de Gestion des Employes</h1>
+            <p class="text-gray-600 mt-1">Gerez les recrutements, mutations, documents, departs et STC de vos employes.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="flex flex-wrap -mb-px space-x-6" id="tabs">
+                <button class="tab active py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="dashboard">
+                    Dashboard
+                </button>
+                <button class="tab py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="recrutement">
+                    Suivi de Recrutement
+                </button>
+                <button class="tab py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="mutation">
+                    Suivi Mutation
+                </button>
+                <button class="tab py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="doc_adm">
+                    Suivi Documents Admin
+                </button>
+                <button class="tab py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="depart">
+                    Etat des Departs
+                </button>
+                 <button class="tab py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="stc">
+                    Suivi STC
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <main>
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-gray-500 text-sm font-medium">Total Recrutements</h3>
+                        <p class="text-3xl font-bold" id="total-recrutement">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-gray-500 text-sm font-medium">Total Mutations</h3>
+                        <p class="text-3xl font-bold" id="total-mutation">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-gray-500 text-sm font-medium">Total Departs</h3>
+                        <p class="text-3xl font-bold" id="total-depart">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-gray-500 text-sm font-medium">Total Suivis STC</h3>
+                        <p class="text-3xl font-bold" id="total-stc">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                         <h3 class="text-lg font-semibold mb-4">Recrutements par Type de Contrat</h3>
+                         <canvas id="recrutementChart"></canvas>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Departs par Nature</h3>
+                        <canvas id="departChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recruitment Section -->
+            <div id="recrutement" class="tab-content">
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Ajouter un nouveau recrutement</h2>
+                    <form id="form-recrutement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="text" placeholder="ID Embauche" name="id_embauche" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="CIN" name="cin" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction Reel" name="fonction_reel" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction AGIRH" name="fonction_agirh" class="p-2 border rounded-md">
+                        <input type="date" placeholder="Date de Debut" name="date_debut" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Site" name="site" class="p-2 border rounded-md" required>
+                        <input type="number" placeholder="Remuneration" name="remuneration" class="p-2 border rounded-md" required>
+                        <input type="tel" placeholder="Numero de Telephone" name="telephone" class="p-2 border rounded-md" required>
+                        <select name="type_contrat" class="p-2 border rounded-md" required>
+                            <option value="" disabled selected>Type de Contrat</option>
+                            <option value="CDI">CDI</option>
+                            <option value="OP">OP</option>
+                            <option value="ANAPEC">ANAPEC</option>
+                            <option value="PCS">PCS</option>
+                        </select>
+                        <select name="envoi_donnes" class="p-2 border rounded-md" required>
+                            <option value="" disabled selected>Envoi Donnees Recrutement</option>
+                            <option value="OUI">Oui</option>
+                            <option value="NON">Non</option>
+                        </select>
+                        <input type="date" placeholder="Date d'Envoi Donnees" name="date_envoi_donnes" class="p-2 border rounded-md">
+                         <select name="cnss" class="p-2 border rounded-md" required>
+                            <option value="" disabled selected>CNSS</option>
+                            <option value="OUI">Oui</option>
+                            <option value="NON">Non</option>
+                        </select>
+                        <select name="bulletin_adhesion" class="p-2 border rounded-md" required>
+                            <option value="" disabled selected>Bulletin d'Adhesion</option>
+                            <option value="OUI">Oui</option>
+                            <option value="NON">Non</option>
+                        </select>
+                        <input type="text" placeholder="OBS" name="obs" class="p-2 border rounded-md">
+                        <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">Liste des Recrutements</h2>
+                        <div class="flex items-center space-x-2">
+                             <input type="text" id="search-recrutement" placeholder="Rechercher..." class="p-2 border rounded-md">
+                             <div class="relative">
+                                <button onclick="toggleFilter('recrutement')" class="bg-white border p-2 rounded-md hover:bg-gray-100">Filtrer</button>
+                                <div id="filter-recrutement" class="filter-dropdown">
+                                    <label class="block mb-2">Type de Contrat</label>
+                                    <select id="filter-type_contrat-recrutement" class="w-full p-2 border rounded-md">
+                                        <option value="">Tous</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                             <button onclick="importFromCsv('recrutement')" class="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600">Importer depuis CSV</button>
+                             <input type="file" id="import-recrutement" class="hidden" accept=".csv">
+                             <button onclick="exportToCsv('recrutements.csv', 'recrutement')" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Exporter en CSV</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500" id="table-recrutement">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3">ID Embauche</th>
+                                    <th class="px-6 py-3">Matricule</th>
+                                    <th class="px-6 py-3">Nom/Prenom</th>
+                                    <th class="px-6 py-3">CIN</th>
+                                    <th class="px-6 py-3">Fonction Reel</th>
+                                    <th class="px-6 py-3">Fonction AGIRH</th>
+                                    <th class="px-6 py-3">Date Debut</th>
+                                    <th class="px-6 py-3">Site</th>
+                                    <th class="px-6 py-3">Remuneration</th>
+                                    <th class="px-6 py-3">Telephone</th>
+                                    <th class="px-6 py-3">Type Contrat</th>
+                                    <th class="px-6 py-3">Envoi Donnees</th>
+                                    <th class="px-6 py-3">Date Envoi</th>
+                                    <th class="px-6 py-3">CNSS</th>
+                                    <th class="px-6 py-3">Bulletin Adhesion</th>
+                                    <th class="px-6 py-3">OBS</th>
+                                    <th class="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mutation Section -->
+            <div id="mutation" class="tab-content">
+                 <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Ajouter une nouvelle mutation</h2>
+                    <form id="form-mutation" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Site Actuel" name="site_actuel" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Site Futur" name="site_futur" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction" name="fonction" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction AGIRH" name="fonction_agirh" class="p-2 border rounded-md">
+                        <input type="date" placeholder="Date de Mutation" name="date_mutation" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="OBS" name="obs" class="p-2 border rounded-md col-span-full md:col-span-1">
+                        <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">Liste des Mutations</h2>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="search-mutation" placeholder="Rechercher..." class="p-2 border rounded-md">
+                            <div class="relative">
+                                <button onclick="toggleFilter('mutation')" class="bg-white border p-2 rounded-md hover:bg-gray-100">Filtrer</button>
+                                <div id="filter-mutation" class="filter-dropdown">
+                                    <label class="block mb-2">Site Actuel</label>
+                                    <select id="filter-site_actuel-mutation" class="w-full p-2 border rounded-md mb-2">
+                                        <option value="">Tous</option>
+                                    </select>
+                                    <label class="block mb-2">Site Futur</label>
+                                    <select id="filter-site_futur-mutation" class="w-full p-2 border rounded-md">
+                                        <option value="">Tous</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="flex space-x-2">
+                             <button onclick="importFromCsv('mutation')" class="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600">Importer depuis CSV</button>
+                             <input type="file" id="import-mutation" class="hidden" accept=".csv">
+                             <button onclick="exportToCsv('mutations.csv', 'mutation')" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Exporter en CSV</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500" id="table-mutation">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3">Matricule</th>
+                                    <th class="px-6 py-3">Nom/Prenom</th>
+                                    <th class="px-6 py-3">Site Actuel</th>
+                                    <th class="px-6 py-3">Site Futur</th>
+                                    <th class="px-6 py-3">Fonction</th>
+                                    <th class="px-6 py-3">Fonction AGIRH</th>
+                                    <th class="px-6 py-3">Date Mutation</th>
+                                    <th class="px-6 py-3">OBS</th>
+                                    <th class="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Docs Section -->
+            <div id="doc_adm" class="tab-content">
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Ajouter un suivi de document</h2>
+                    <form id="form-doc_adm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Site" name="site" class="p-2 border rounded-md" required>
+                        <select name="type_contrat" class="p-2 border rounded-md" required>
+                             <option value="" disabled selected>Type de Contrat</option>
+                             <option value="CDI">CDI</option>
+                             <option value="OP">OP</option>
+                             <option value="ANAPEC">ANAPEC</option>
+                             <option value="PCS">PCS</option>
+                        </select>
+                        <input type="text" placeholder="Fonction" name="fonction" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Droit a la Paie" name="droit_paie" class="p-2 border rounded-md">
+                        <input type="text" placeholder="Documents Demandes" name="doc_demandes" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Observations" name="observations" class="p-2 border rounded-md">
+                        <input type="date" placeholder="Date" name="date" class="p-2 border rounded-md" required>
+                        <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter</button>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">Suivi des Documents Administratifs</h2>
+                        <div class="flex items-center space-x-2">
+                             <input type="text" id="search-doc_adm" placeholder="Rechercher..." class="p-2 border rounded-md">
+                        </div>
+                        <div class="flex space-x-2">
+                             <button onclick="importFromCsv('doc_adm')" class="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600">Importer depuis CSV</button>
+                             <input type="file" id="import-doc_adm" class="hidden" accept=".csv">
+                            <button onclick="exportToCsv('documents_admin.csv', 'doc_adm')" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Exporter en CSV</button>
+                        </div>
+                    </div>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500" id="table-doc_adm">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3">Matricule</th>
+                                    <th class="px-6 py-3">Nom/Prenom</th>
+                                    <th class="px-6 py-3">Site</th>
+                                    <th class="px-6 py-3">Type Contrat</th>
+                                    <th class="px-6 py-3">Fonction</th>
+                                    <th class="px-6 py-3">Droit Paie</th>
+                                    <th class="px-6 py-3">Docs Demandes</th>
+                                    <th class="px-6 py-3">Observations</th>
+                                    <th class="px-6 py-3">Date</th>
+                                    <th class="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Departures Section -->
+            <div id="depart" class="tab-content">
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Ajouter un depart</h2>
+                    <form id="form-depart" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="text" placeholder="Region" name="region" class="p-2 border rounded-md">
+                        <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction" name="fonction" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction AGIRH" name="fonction_agirh" class="p-2 border rounded-md">
+                        <input type="date" placeholder="Date d'Integration" name="date_integration" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Site" name="site" class="p-2 border rounded-md" required>
+                        <input type="date" placeholder="Date de Depart" name="date_depart" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Nature de Depart" name="nature_depart" class="p-2 border rounded-md">
+                        <input type="text" placeholder="Motif de Depart" name="motif_depart" class="p-2 border rounded-md">
+                        <select name="type_contrat" class="p-2 border rounded-md" required>
+                            <option value="" disabled selected>Type de Contrat</option>
+                            <option value="CDI">CDI</option>
+                            <option value="OP">OP</option>
+                            <option value="ANAPEC">ANAPEC</option>
+                             <option value="PCS">PCS</option>
+                        </select>
+                        <input type="text" placeholder="Observation" name="observation" class="p-2 border rounded-md">
+                        <input type="text" placeholder="Justif Depose" name="justif_depose" class="p-2 border rounded-md">
+                        <input type="text" placeholder="Preavis" name="preavis" class="p-2 border rounded-md">
+                        <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter</button>
+                    </form>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">Liste des Departs</h2>
+                        <div class="flex items-center space-x-2">
+                             <input type="text" id="search-depart" placeholder="Rechercher..." class="p-2 border rounded-md">
+                        </div>
+                        <div class="flex space-x-2">
+                             <button onclick="importFromCsv('depart')" class="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600">Importer depuis CSV</button>
+                             <input type="file" id="import-depart" class="hidden" accept=".csv">
+                            <button onclick="exportToCsv('departs.csv', 'depart')" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Exporter en CSV</button>
+                        </div>
+                    </div>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500" id="table-depart">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3">Region</th>
+                                    <th class="px-6 py-3">Matricule</th>
+                                    <th class="px-6 py-3">Nom/Prenom</th>
+                                    <th class="px-6 py-3">Fonction</th>
+                                    <th class="px-6 py-3">Fonction AGIRH</th>
+                                    <th class="px-6 py-3">Date Integration</th>
+                                    <th class="px-6 py-3">Site</th>
+                                    <th class="px-6 py-3">Date Depart</th>
+                                    <th class="px-6 py-3">Nature Depart</th>
+                                    <th class="px-6 py-3">Motif Depart</th>
+                                    <th class="px-6 py-3">Type Contrat</th>
+                                    <th class="px-6 py-3">Observation</th>
+                                    <th class="px-6 py-3">Justif Depose</th>
+                                    <th class="px-6 py-3">Preavis</th>
+                                    <th class="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STC Section -->
+            <div id="stc" class="tab-content">
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Ajouter un suivi STC</h2>
+                    <form id="form-stc" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="text" placeholder="Site" name="site" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
+                        <input type="text" placeholder="Fonction" name="fonction" class="p-2 border rounded-md" required>
+                        <input type="date" placeholder="Date de Depart" name="date_depart" class="p-2 border rounded-md" required>
+                        <select name="stc_magasin" class="p-2 border rounded-md" required>
+                             <option value="" disabled selected>STC Envoye au Magasin</option>
+                             <option value="OUI">Oui</option>
+                             <option value="NON">Non</option>
+                        </select>
+                        <select name="stc_wafaa" class="p-2 border rounded-md" required>
+                             <option value="" disabled selected>STC Envoye a WAFAA</option>
+                             <option value="OUI">Oui</option>
+                             <option value="NON">Non</option>
+                        </select>
+                        <input type="date" placeholder="Date d'Envoi" name="date_envoi" class="p-2 border rounded-md">
+                        <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter</button>
+                    </form>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">Liste des Suivis STC</h2>
+                        <div class="flex items-center space-x-2">
+                             <input type="text" id="search-stc" placeholder="Rechercher..." class="p-2 border rounded-md">
+                        </div>
+                        <div class="flex space-x-2">
+                             <button onclick="importFromCsv('stc')" class="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600">Importer depuis CSV</button>
+                             <input type="file" id="import-stc" class="hidden" accept=".csv">
+                            <button onclick="exportToCsv('suivi_stc.csv', 'stc')" class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Exporter en CSV</button>
+                        </div>
+                    </div>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500" id="table-stc">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3">Site</th>
+                                    <th class="px-6 py-3">Matricule</th>
+                                    <th class="px-6 py-3">Nom/Prenom</th>
+                                    <th class="px-6 py-3">Fonction</th>
+                                    <th class="px-6 py-3">Date Depart</th>
+                                    <th class="px-6 py-3">STC Magasin</th>
+                                    <th class="px-6 py-3">STC WAFAA</th>
+                                    <th class="px-6 py-3">Date d'Envoi</th>
+                                    <th class="px-6 py-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl leading-6 font-medium text-gray-900" id="modal-title">Modifier l'entree</h3>
+                     <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="mt-2 px-7 py-3">
+                    <form id="editForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Form fields will be dynamically inserted here -->
+                    </form>
+                </div>
+                <div class="items-center px-4 py-3 text-right">
+                    <button id="saveChanges" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        Sauvegarder
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

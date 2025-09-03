@@ -386,30 +386,30 @@ function handleFileUpload(event, section) {
 }
 
 function parseCSV(text, section) {
-    const lines = text.split(/\r\n|\n/);
+    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
     if (lines.length < 2) return [];
 
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
     const form = document.getElementById(`form-${section}`);
     const expectedKeys = Array.from(form.elements).map(el => el.name).filter(Boolean);
+    const expectedKeySet = new Set(expectedKeys);
 
-    // Naive mapping by order. A more robust solution would map by header name.
     const data = [];
     for (let i = 1; i < lines.length; i++) {
-        if (!lines[i]) continue;
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
         const newEntry = { id: Date.now() + i };
-        let isValid = true;
-        
-        for (let j = 0; j < expectedKeys.length; j++) {
-            if (values[j] !== undefined) {
-                 newEntry[expectedKeys[j]] = values[j];
-            } else {
-                // If a required field is missing in the CSV, we could skip the row
-                // For now, we'll just leave it empty.
+
+        headers.forEach((header, index) => {
+            // Only import data for columns that match a form field name
+            if (expectedKeySet.has(header) && values[index] !== undefined) {
+                newEntry[header] = values[index];
             }
+        });
+
+        // Only add the new entry if it contains more than just the 'id' field
+        if (Object.keys(newEntry).length > 1) {
+            data.push(newEntry);
         }
-        data.push(newEntry);
     }
     return data;
 }

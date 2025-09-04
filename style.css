@@ -1,6 +1,159 @@
-body {
-    font-family: 'Inter', sans-serif;
+/* Theme customization */
+:root {
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --spacing: 1rem;
+    --font-family: 'Inter', sans-serif;
 }
+
+/* Base styles */
+body {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing);
+    background: #f8f9fa;
+}
+
+/* Tab styles */
+.tab-container {
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 2rem;
+}
+
+.tab {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.tab:hover {
+    color: var(--primary);
+}
+
+.tab.active {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Content sections */
+.tab-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    background: white;
+    padding: var(--spacing);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tab-content.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: white;
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+tr:hover {
+    background: #f8f9fa;
+}
+
+/* Button styles */
+button, .button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: white;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+button:hover, .button:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Chart containers */
+.chart-container {
+    background: white;
+    padding: var(--spacing);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: var(--spacing);
+}
+
+/* Grid system */
+.grid {
+    display: grid;
+    gap: var(--spacing);
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Statistics cards */
+.stat-card {
+    background: white;
+    padding: var(--spacing);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-card h3 {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.stat-card p {
+    margin: 0.5rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Form elements */
+input, select, textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Utility classes */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 2rem; }
 
 .tab-content {
     display: none;

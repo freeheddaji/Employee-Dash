@@ -1,10 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM Content Loaded'); // Debug log
     
-    // Initialize database
+    // Initialize managers
     const db = new DatabaseManager();
+    const chartManager = new ChartManager();
+    let initializationComplete = false;
     
-    // Initialize backup manager after database is ready
+    // Initialize database and backup manager
     db.initDatabase().then(() => {
         const backupManager = new BackupManager(db);
     backupManager.initializeBackup();
@@ -87,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize state
     loadState().then(() => {
         console.log('State loaded successfully');
+        initializationComplete = true;
         // Force initial display of dashboard
         const dashboardTab = document.querySelector('[data-tab="dashboard"]');
         if (dashboardTab) {
@@ -281,7 +284,12 @@ document.addEventListener('DOMContentLoaded', function() {
         depart: null
     };
 
-    function renderDashboard() {
+    async function renderDashboard() {
+        if (!initializationComplete) {
+            console.log('Skipping dashboard render - initialization not complete');
+            return;
+        }
+        
         console.log('Rendering dashboard...'); // Debug log
 
         // Update statistics
@@ -290,91 +298,37 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('total-depart').textContent = state.depart.length;
         document.getElementById('total-archives').textContent = state.archives.length;
 
-        // Destroy existing charts
-        if (charts.recrutement) {
-            charts.recrutement.destroy();
-            charts.recrutement = null;
-        }
-        if (charts.depart) {
-            charts.depart.destroy();
-            charts.depart = null;
-        }
+        // Destroy any existing charts
+        chartManager.destroyAllCharts();
 
-        // Render recruitment chart
         try {
-            const recrutementCtx = document.getElementById('recrutementChart')?.getContext('2d');
-            if (recrutementCtx) {
-                const recrutementData = state.recrutement.reduce((acc, item) => {
-                    acc[item.type_contrat] = (acc[item.type_contrat] || 0) + 1;
-                    return acc;
-                }, {});
+            await chartManager.destroyAllCharts();
 
-                charts.recrutement = new Chart(recrutementCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(recrutementData),
-                        datasets: [{
-                            label: 'Nombre de recrutements',
-                            data: Object.values(recrutementData),
-                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: { 
-                        scales: { y: { beginAtZero: true } },
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
+            // Wait for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Prepare recruitment data
+            const recrutementData = state.recrutement.reduce((acc, item) => {
+                acc[item.type_contrat] = (acc[item.type_contrat] || 0) + 1;
+                return acc;
+            }, {});
+            
+            // Create recruitment chart
+            await chartManager.createRecrutementChart(recrutementData);
+
+            // Prepare departure data
+            const allDeparts = [...state.depart, ...state.archives];
+            const departData = allDeparts.reduce((acc, item) => {
+                const nature = item.nature_depart || 'Non specifie';
+                acc[nature] = (acc[nature] || 0) + 1;
+                return acc;
+            }, {});
+
+            // Create departure chart
+            await chartManager.createDepartChart(departData);
+            
         } catch (error) {
-            console.error('Error rendering recruitment chart:', error);
-        }
-
-        // Render departures chart
-        try {
-            const departCtx = document.getElementById('departChart')?.getContext('2d');
-            if (departCtx) {
-                const allDeparts = [...state.depart, ...state.archives];
-                const departData = allDeparts.reduce((acc, item) => {
-                    const nature = item.nature_depart || 'Non specifie';
-                    acc[nature] = (acc[nature] || 0) + 1;
-                    return acc;
-                }, {});
-
-                charts.depart = new Chart(departCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: Object.keys(departData),
-                        datasets: [{
-                            label: 'Nature de depart',
-                            data: Object.values(departData),
-                            backgroundColor: [
-                                'rgba(255, 99, 132, 0.5)',
-                                'rgba(54, 162, 235, 0.5)',
-                                'rgba(255, 206, 86, 0.5)',
-                                'rgba(75, 192, 192, 0.5)',
-                                'rgba(153, 102, 255, 0.5)',
-                            ],
-                            borderColor: [
-                                'rgba(255, 99, 132, 1)',
-                                'rgba(54, 162, 235, 1)',
-                                'rgba(255, 206, 86, 1)',
-                                'rgba(75, 192, 192, 1)',
-                                'rgba(153, 102, 255, 1)',
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error rendering departures chart:', error);
+            console.error('Error rendering charts:', error);
         }
     }
 

@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Management Dashboard</title>
+    <!-- Styles -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="dist/output.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.classless.min.css">
+    <link href="style.css" rel="stylesheet">
+    
+    <!-- Core Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Application Scripts -->
     <script src="js/database.js" defer></script>
     <script src="js/backup-manager.js" defer></script>
+    <script src="js/chart-manager.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -95,13 +101,17 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="chart-container">
                          <h3 class="text-lg font-semibold mb-4">Recrutements par Type de Contrat</h3>
-                         <canvas id="recrutementChart"></canvas>
+                         <div class="h-chart relative">
+                             <canvas id="recrutementChart"></canvas>
+                         </div>
                     </div>
-                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                     <div class="chart-container">
                         <h3 class="text-lg font-semibold mb-4">Departs par Nature</h3>
-                        <canvas id="departChart"></canvas>
+                        <div class="h-chart relative">
+                            <canvas id="departChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Management Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="dist/output.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/database.js" defer></script>
+    <script src="js/backup-manager.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
@@ -121,13 +124,13 @@
             <div id="notifications" class="tab-content">
                  <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                     <h2 class="text-xl font-semibold mb-4">Creer un nouveau rappel</h2>
-                    <form id="form-notification" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <form id="form-notification" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                         <input type="text" placeholder="Matricule de l'employe" name="matricule" class="p-2 border rounded-md" required>
                         <select name="type" class="p-2 border rounded-md" required>
                             <option value="" disabled selected>Type de rappel</option>
                         </select>
                         <input type="date" placeholder="Date d'echeance" name="dueDate" class="p-2 border rounded-md" required>
-                        <input type="text" placeholder="Notes (optionnel)" name="notes" class="p-2 border rounded-md col-span-full md:col-span-1">
+                        <input type="text" placeholder="Notes (optionnel)" name="notes" class="p-2 border rounded-md md:col-span-2 lg:col-span-1">
                         <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter Rappel</button>
                     </form>
                 </div>
@@ -174,39 +177,56 @@
                     <!-- Manage Contract Types -->
                     <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-xl font-semibold mb-4">Gerer les Types de Contrat</h3>
-                        <div class="flex items-center space-x-2 mb-4">
-                            <input type="text" id="new-type_contrat" placeholder="Nouveau type de contrat" class="p-2 border rounded-md w-full">
-                            <button onclick="addSetting('type_contrat')" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Ajouter</button>
-                        </div>
+                        <form id="form-settings-type_contrat" class="flex items-center space-x-2 mb-4">
+                            <input type="text" name="settingValue" placeholder="Nouveau type de contrat" class="p-2 border rounded-md w-full" required>
+                            <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Ajouter</button>
+                        </form>
                         <ul id="list-type_contrat" class="space-y-2"></ul>
                     </div>
                     <!-- Manage Departure Natures -->
                     <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-xl font-semibold mb-4">Gerer les Natures de Depart</h3>
-                        <div class="flex items-center space-x-2 mb-4">
-                            <input type="text" id="new-nature_depart" placeholder="Nouvelle nature de depart" class="p-2 border rounded-md w-full">
-                            <button onclick="addSetting('nature_depart')" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Ajouter</button>
-                        </div>
+                        <form id="form-settings-nature_depart" class="flex items-center space-x-2 mb-4">
+                            <input type="text" name="settingValue" placeholder="Nouvelle nature de depart" class="p-2 border rounded-md w-full" required>
+                            <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Ajouter</button>
+                        </form>
                         <ul id="list-nature_depart" class="space-y-2"></ul>
                     </div>
                     <!-- Manage Notification Types -->
                     <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-xl font-semibold mb-4">Gerer les Types de Rappel</h3>
-                        <div class="flex items-center space-x-2 mb-4">
-                            <input type="text" id="new-notification_type" placeholder="Nouveau type de rappel" class="p-2 border rounded-md w-full">
-                            <button onclick="addSetting('notification_type')" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Ajouter</button>
-                        </div>
+                        <form id="form-settings-notification_type" class="flex items-center space-x-2 mb-4">
+                            <input type="text" name="settingValue" placeholder="Nouveau type de rappel" class="p-2 border rounded-md w-full" required>
+                            <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Ajouter</button>
+                        </form>
                         <ul id="list-notification_type" class="space-y-2"></ul>
+                    </div>
+
+                    <!-- Backup Management -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-semibold mb-4">Gestion des Sauvegardes</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span>Sauvegardes Automatiques</span>
+                                <button id="create-backup" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                                    Créer une Sauvegarde
+                                </button>
+                            </div>
+                            <div id="backup-list" class="mt-4">
+                                <h4 class="font-medium mb-2">Sauvegardes Disponibles</h4>
+                                <div class="space-y-2" id="backup-items"></div>
+                            </div>
+                            <div id="backup-notification" class="backup-notification mt-4"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- HIDDEN FULL SECTIONS FOR BREVITY (They exist but are hidden to keep the file clean) -->
-            <div class="hidden">
+            <!-- Main sections -->
                  <div id="recrutement" class="tab-content">
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                         <h2 class="text-xl font-semibold mb-4">Ajouter un nouveau recrutement</h2>
-                        <form id="form-recrutement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <form id="form-recrutement" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                             <input type="text" placeholder="ID Embauche" name="id_embauche" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
@@ -270,7 +290,7 @@
                 <div id="mutation" class="tab-content">
                      <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                         <h2 class="text-xl font-semibold mb-4">Ajouter une nouvelle mutation</h2>
-                        <form id="form-mutation" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <form id="form-mutation" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                             <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Site Actuel" name="site_actuel" class="p-2 border rounded-md" required>
@@ -278,7 +298,7 @@
                             <input type="text" placeholder="Fonction" name="fonction" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Fonction AGIRH" name="fonction_agirh" class="p-2 border rounded-md">
                             <input type="date" placeholder="Date de Mutation" name="date_mutation" class="p-2 border rounded-md" required>
-                            <input type="text" placeholder="OBS" name="obs" class="p-2 border rounded-md col-span-full md:col-span-1">
+                            <input type="text" placeholder="OBS" name="obs" class="p-2 border rounded-md">
                             <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 col-span-full">Ajouter</button>
                         </form>
                     </div>
@@ -316,7 +336,7 @@
                 <div id="doc_adm" class="tab-content">
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                         <h2 class="text-xl font-semibold mb-4">Ajouter un suivi de document</h2>
-                        <form id="form-doc_adm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <form id="form-doc_adm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                             <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Site" name="site" class="p-2 border rounded-md" required>
@@ -352,7 +372,7 @@
                 <div id="depart" class="tab-content">
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                         <h2 class="text-xl font-semibold mb-4">Ajouter un depart</h2>
-                        <form id="form-depart" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <form id="form-depart" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                             <input type="text" placeholder="Region" name="region" class="p-2 border rounded-md">
                             <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
@@ -395,7 +415,7 @@
                 <div id="stc" class="tab-content">
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
                         <h2 class="text-xl font-semibold mb-4">Ajouter un suivi STC</h2>
-                        <form id="form-stc" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <form id="form-stc" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
                             <input type="text" placeholder="Site" name="site" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Matricule" name="matricule" class="p-2 border rounded-md" required>
                             <input type="text" placeholder="Nom et Prenom" name="nom_prenom" class="p-2 border rounded-md" required>
@@ -444,7 +464,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl leading-6 font-medium text-gray-900" id="modal-title">Modifier l'entree</h3>
                      <button id="closeModal" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 <div class="mt-2 px-7 py-3">
@@ -464,3 +484,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+

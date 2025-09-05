@@ -75,15 +75,16 @@ class BackupManager {
 
             // Restore each section
             for (const [section, data] of Object.entries(backup.data)) {
-                await this.dbManager.clearStore(section);
-                if (Array.isArray(data)) {
-                    for (const item of data) {
-                        await this.dbManager.saveData(section, item);
-                    }
+                // The new saveData function handles clearing and saving the whole dataset.
+                // It works for both arrays of data and the single settings object.
+                if (data) { // Ensure data is not null or undefined
+                    await this.dbManager.saveData(section, data);
                 }
             }
 
             this.showBackupNotification('Restauration réussie', 'success');
+            // We should reload the page to ensure the UI reflects the restored state
+            location.reload();
             return true;
         } catch (error) {
             console.error('Restore failed:', error);

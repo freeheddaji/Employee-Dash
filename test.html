@@ -57,6 +57,9 @@
     </script>
 
     <!-- The script to be tested -->
+    <script src="js/database.js"></script>
+    <script src="js/backup-manager.js"></script>
+    <script src="js/chart-manager.js"></script>
     <script src="script.js"></script>
 
     <script>
@@ -117,6 +120,78 @@
                 assert.strictEqual(result.length, 1, "Should parse one record");
                 assert.notOk(result[0].hasOwnProperty('extra_column'), "Should not import columns that are not in the form");
                 assert.strictEqual(result[0].matricule, "M-333", "matricule should be correctly mapped");
+            });
+        });
+
+        QUnit.module('Backup and Restore', function(hooks) {
+            let dbManager;
+            let backupManager;
+
+            hooks.beforeEach(async () => {
+                // This will re-initialize the database for each test.
+                dbManager = new DatabaseManager();
+                await dbManager.initDatabase();
+                backupManager = new BackupManager(dbManager);
+
+                // Clear local storage and all database stores before each test
+                localStorage.clear();
+                const stores = ['recrutement', 'mutation', 'doc_adm', 'depart', 'stc', 'archives', 'employeeList', 'settings'];
+                for (const store of stores) {
+                    try {
+                        await dbManager.clearStore(store);
+                    } catch (e) {
+                        // Ignore errors if store doesn't exist yet, though it should.
+                    }
+                }
+            });
+
+            QUnit.test('Restore should recover all items, not just the last one', async function(assert) {
+                const done = assert.async();
+
+                // 1. Setup initial data with multiple items
+                const initialRecrutementData = [
+                    { id: 1, matricule: 'M001', nom_prenom: 'Alice' },
+                    { id: 2, matricule: 'M002', nom_prenom: 'Bob' },
+                    { id: 3, matricule: 'M003', nom_prenom: 'Charlie' }
+                ];
+
+                // Manually save this initial data to the DB for the test setup
+                // We don't use saveData because it's part of what we're testing
+                const transaction = dbManager.db.transaction('recrutement', 'readwrite');
+                const store = transaction.objectStore('recrutement');
+                initialRecrutementData.forEach(item => store.add(item));
+
+                await new Promise((resolve, reject) => {
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = reject;
+                });
+
+                // 2. Create a backup
+                await backupManager.createBackup();
+                const backups = backupManager.getBackupsList();
+                assert.strictEqual(backups.length, 1, "A backup should be created.");
+
+                // 3. Clear the database store to simulate data loss
+                await dbManager.clearStore('recrutement');
+                const dataAfterClear = await dbManager.getData('recrutement');
+                assert.strictEqual(dataAfterClear.length, 0, "Recrutement store should be empty after clearing.");
+
+                // 4. Restore the backup
+                const latestBackupTimestamp = backups[0].timestamp;
+                await backupManager.restoreBackup(latestBackupTimestamp);
+
+                // 5. Verify restored data
+                const restoredData = await dbManager.getData('recrutement');
+
+                // This is the key assertion that will fail with the buggy code
+                assert.strictEqual(restoredData.length, initialRecrutementData.length, "Restored data should have the same number of items as the original data.");
+
+                // Also check if the content is correct
+                const restoredMatricules = restoredData.map(i => i.matricule).sort();
+                const initialMatricules = initialRecrutementData.map(i => i.matricule).sort();
+                assert.deepEqual(restoredMatricules, initialMatricules, "All matricules should be present and correct after restore.");
+
+                done();
             });
         });
     </script>

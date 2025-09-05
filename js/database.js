@@ -46,21 +46,34 @@ class DatabaseManager {
             const transaction = this.db.transaction(storeName, 'readwrite');
             const store = transaction.objectStore(storeName);
 
-            // Clear existing data
-            store.clear().onsuccess = () => {
-                // Add new data
-                const request = store.add(data);
-
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            };
-
             transaction.oncomplete = () => {
-                console.log(`Data saved successfully in ${storeName}`);
+                // The transaction completed successfully.
                 resolve();
             };
+            transaction.onerror = (event) => {
+                console.error(`Transaction error on ${storeName}:`, event.target.error);
+                reject(event.target.error);
+            };
 
-            transaction.onerror = () => reject(transaction.error);
+            // 1. Clear existing data in the store
+            const clearRequest = store.clear();
+
+            clearRequest.onsuccess = () => {
+                // 2. Once cleared, add the new data
+                if (Array.isArray(data)) {
+                    // If data is an array, add each item.
+                    data.forEach(item => {
+                        store.add(item);
+                    });
+                } else if (data) { // For non-array data like the settings object
+                    store.add(data);
+                }
+            };
+
+            clearRequest.onerror = (event) => {
+                console.error(`Could not clear ${storeName}:`, event.target.error);
+                reject(event.target.error);
+            };
         });
     }
 

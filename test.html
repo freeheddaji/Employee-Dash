@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-g">
+    <title>CSV Import Test</title>
+    <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.19.1.css">
+</head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+
+    <!-- Minimal DOM structure required by the script -->
+    <div style="display: none;">
+        <form id="form-recrutement">
+            <input name="id_embauche">
+            <input name="matricule">
+            <input name="nom_prenom">
+            <input name="cin">
+            <input name="fonction_reel">
+            <input name="fonction_agirh">
+            <input name="date_debut">
+            <input name="site">
+            <input name="remuneration">
+            <input name="telephone">
+            <input name="type_contrat">
+            <input name="envoi_donnes">
+            <input name="date_envoi_donnes">
+            <input name="cnss">
+            <input name="bulletin_adhesion">
+            <input name="obs">
+        </form>
+        <form id="form-mutation"></form>
+        <form id="form-doc_adm"></form>
+        <form id="form-depart"></form>
+        <form id="form-stc"></form>
+        <div id="table-recrutement"><tbody></tbody></div>
+        <div id="table-mutation"><tbody></tbody></div>
+        <div id="table-doc_adm"><tbody></tbody></div>
+        <div id="table-depart"><tbody></tbody></div>
+        <div id="table-stc"><tbody></tbody></div>
+        <p id="total-recrutement"></p>
+        <p id="total-mutation"></p>
+        <p id="total-depart"></p>
+        <p id="total-stc"></p>
+        <canvas id="recrutementChart"></canvas>
+        <canvas id="departChart"></canvas>
+    </div>
+
+    <script src="https://code.jquery.com/qunit/qunit-2.19.1.js"></script>
+
+    <!-- We need a mock for Chart.js as it's not relevant to the test -->
+    <script>
+        class Chart {
+            constructor(ctx, config) {}
+            destroy() {}
+        }
+    </script>
+
+    <!-- The script to be tested -->
+    <script src="script.js"></script>
+
+    <script>
+        // Mocking localStorage
+        let store = {};
+        const localStorageMock = {
+            getItem: key => store[key] || null,
+            setItem: (key, value) => { store[key] = value.toString(); },
+            clear: () => { store = {}; }
+        };
+        Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+        QUnit.module('CSV Import', function(hooks) {
+            hooks.beforeEach(function() {
+                // Reset state before each test
+                localStorage.clear();
+                // We need to initialize the state for the script
+                document.dispatchEvent(new Event('DOMContentLoaded'));
+            });
+
+            QUnit.test('parseCSV should correctly map data using headers', function(assert) {
+                // Headers are swapped: matricule is first, id_embauche is second
+                const csvContent = [
+                    '"matricule","id_embauche","nom_prenom"',
+                    '"M-999","E-101","Test User"'
+                ].join('\\n');
+
+                const result = parseCSV(csvContent, 'recrutement');
+
+                assert.strictEqual(result.length, 1, "Should parse one record");
+
+                // The expected correct behavior:
+                assert.strictEqual(result[0].id_embauche, "E-101", "id_embauche should be correctly mapped from the second column");
+                assert.strictEqual(result[0].matricule, "M-999", "matricule should be correctly mapped from the first column");
+                assert.strictEqual(result[0].nom_prenom, "Test User", "nom_prenom is correct");
+            });
+
+            QUnit.test('parseCSV should handle empty lines gracefully', function(assert) {
+                const csvContent = [
+                    '"matricule","id_embauche"',
+                    '',
+                    '"M-111","E-222"',
+                    '\\n'
+                ].join('\\n');
+
+                const result = parseCSV(csvContent, 'recrutement');
+                assert.strictEqual(result.length, 1, "Should parse one record and ignore empty lines");
+                assert.strictEqual(result[0].matricule, "M-111", "matricule should be correctly mapped");
+            });
+
+            QUnit.test('parseCSV should only import columns present in the form', function(assert) {
+                const csvContent = [
+                    '"matricule","extra_column","nom_prenom"',
+                    '"M-333","some_value","Test User 2"'
+                ].join('\\n');
+
+                const result = parseCSV(csvContent, 'recrutement');
+                assert.strictEqual(result.length, 1, "Should parse one record");
+                assert.notOk(result[0].hasOwnProperty('extra_column'), "Should not import columns that are not in the form");
+                assert.strictEqual(result[0].matricule, "M-333", "matricule should be correctly mapped");
+            });
+        });
+    </script>
+</body>
+</html>
